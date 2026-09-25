@@ -7,6 +7,7 @@ import {
   Param,
   ParseUUIDPipe,
   Patch,
+  Delete,
 } from '@nestjs/common';
 
 import { CreateListingDto } from './dto/create-listing.dto.js';
@@ -39,5 +40,10 @@ export class ListingsController {
     @Body() updateListingDto: UpdateListingDto,
   ) {
     return this.listingsService.update(id, updateListingDto);
+  }
+
+  @Delete(':id')
+  remove(@Param('id', new ParseUUIDPipe()) id: string) {
+    return this.listingsService.remove(id);
   }
 }

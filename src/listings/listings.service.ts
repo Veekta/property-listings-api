@@ -232,4 +232,20 @@ export class ListingsService {
 
     return mapListing(listing);
   }
+
+  async remove(id: string) {
+    const deletedListing =
+      await this.databaseService.client.orm.public.Listing.where({
+        id,
+      }).delete();
+
+    if (!deletedListing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    return {
+      message: 'Listing deleted successfully',
+      id,
+    };
+  }
 }
