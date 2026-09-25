@@ -30,16 +30,38 @@ export class ListingsService {
   }
 
   async findAll(query: ListListingsDto) {
-    const { page, limit } = query;
+    const { page, limit, type, minPrice, maxPrice, bedrooms } = query;
 
     const offset = (page - 1) * limit;
 
-    const [listings, countResult] = await Promise.all([
-      this.databaseService.client.orm.public.Listing.limit(limit)
-        .offset(offset)
-        .all(),
+    let listingsQuery = this.databaseService.client.orm.public.Listing;
 
-      this.databaseService.client.orm.public.Listing.aggregate((builder) => ({
+    if (type) {
+      listingsQuery = listingsQuery.where({ type });
+    }
+
+    if (minPrice !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.price.gte(minPrice.toString()),
+      );
+    }
+
+    if (maxPrice !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.price.lte(maxPrice.toString()),
+      );
+    }
+
+    if (bedrooms !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.bedrooms.eq(bedrooms),
+      );
+    }
+
+    const [listings, countResult] = await Promise.all([
+      listingsQuery.limit(limit).offset(offset).all(),
+
+      listingsQuery.aggregate((builder) => ({
         total: builder.count(),
       })),
     ]);
