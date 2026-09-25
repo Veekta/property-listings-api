@@ -1,4 +1,8 @@
-import { BadRequestException, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service.js';
 import { CreateListingDto } from './dto/create-listing.dto.js';
@@ -140,5 +144,25 @@ export class ListingsService {
         hasPrevious: page > 1,
       },
     };
+  }
+
+  async findOne(id: string) {
+    const listing = await this.databaseService.client.orm.public.Listing.select(
+      'id',
+      'title',
+      'price',
+      'type',
+      'bedrooms',
+      'location',
+      'agentId',
+      'createdAt',
+      'updatedAt',
+    ).first({ id });
+
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    return mapListing(listing);
   }
 }
