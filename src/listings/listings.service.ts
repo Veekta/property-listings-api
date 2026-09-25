@@ -2,6 +2,8 @@ import { Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service.js';
 import { CreateListingDto } from './dto/create-listing.dto.js';
+import { mapListing } from './mappers/listing.mapper.js';
+import { ListListingsDto } from './dto/list-listings.dto.js';
 
 @Injectable()
 export class ListingsService {
@@ -25,5 +27,36 @@ export class ListingsService {
       location,
       agentId,
     });
+  }
+
+  async findAll(query: ListListingsDto) {
+    const { page, limit } = query;
+
+    const offset = (page - 1) * limit;
+
+    const [listings, countResult] = await Promise.all([
+      this.databaseService.client.orm.public.Listing.limit(limit)
+        .offset(offset)
+        .all(),
+
+      this.databaseService.client.orm.public.Listing.aggregate((builder) => ({
+        total: builder.count(),
+      })),
+    ]);
+
+    const total = countResult.total;
+    const totalPages = Math.ceil(total / limit);
+
+    return {
+      data: listings.map(mapListing),
+      meta: {
+        page,
+        limit,
+        total,
+        totalPages,
+        hasNext: page < totalPages,
+        hasPrevious: page > 1,
+      },
+    };
   }
 }
