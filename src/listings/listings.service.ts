@@ -1,9 +1,9 @@
-import { Injectable, BadRequestException } from '@nestjs/common';
+import { BadRequestException, Injectable } from '@nestjs/common';
 
 import { DatabaseService } from '../database/database.service.js';
 import { CreateListingDto } from './dto/create-listing.dto.js';
-import { mapListing } from './mappers/listing.mapper.js';
 import { ListListingsDto } from './dto/list-listings.dto.js';
+import { mapListing } from './mappers/listing.mapper.js';
 
 @Injectable()
 export class ListingsService {
@@ -42,8 +42,6 @@ export class ListingsService {
       radius,
     } = query;
 
-    const offset = (page - 1) * limit;
-
     const hasLatitude = latitude !== undefined;
     const hasLongitude = longitude !== undefined;
     const hasRadius = radius !== undefined;
@@ -67,108 +65,68 @@ export class ListingsService {
 
     const radiusInMeters = radius !== undefined ? radius * 1000 : undefined;
 
-    const listingTable = this.databaseService.client.sql.public.listing;
+    /*
+     * Build the base ORM query.
+     *
+     * Every filter here is applied to both:
+     * 1. the paginated listing query
+     * 2. the COUNT query
+     */
+    let listingsQuery = this.databaseService.client.orm.public.Listing;
 
-    let listingsQuery = listingTable.select(
-      'id',
-      'title',
-      'price',
-      'type',
-      'bedrooms',
-      'location',
-      'agentId',
-      'createdAt',
-      'updatedAt',
-    );
+    if (type !== undefined) {
+      listingsQuery = listingsQuery.where((listing) => listing.type.eq(type));
+    }
 
-    listingsQuery = listingsQuery.where((f, fns) => {
-      const conditions = [];
+    if (minPrice !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.price.gte(minPrice.toString()),
+      );
+    }
 
-      if (type) {
-        conditions.push(fns.eq(f.type, type));
-      }
+    if (maxPrice !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.price.lte(maxPrice.toString()),
+      );
+    }
 
-      if (minPrice !== undefined) {
-        conditions.push(fns.gte(f.price, minPrice.toString()));
-      }
+    if (bedrooms !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.bedrooms.eq(bedrooms),
+      );
+    }
 
-      if (maxPrice !== undefined) {
-        conditions.push(fns.lte(f.price, maxPrice.toString()));
-      }
+    if (searchPoint !== undefined && radiusInMeters !== undefined) {
+      listingsQuery = listingsQuery.where((listing) =>
+        listing.location.distanceSphere(searchPoint).lte(radiusInMeters),
+      );
+    }
 
-      if (bedrooms !== undefined) {
-        conditions.push(fns.eq(f.bedrooms, bedrooms));
-      }
+    const offset = (page - 1) * limit;
 
-      if (searchPoint && radiusInMeters !== undefined) {
-        conditions.push(
-          fns.lte(fns.distanceSphere(f.location, searchPoint), radiusInMeters),
-        );
-      }
+    const [listingRows, totals] = await Promise.all([
+      listingsQuery
+        .select(
+          'id',
+          'title',
+          'price',
+          'type',
+          'bedrooms',
+          'location',
+          'agentId',
+          'createdAt',
+          'updatedAt',
+        )
+        .limit(limit)
+        .offset(offset)
+        .all(),
 
-      if (conditions.length === 0) {
-        return fns.eq(f.id, f.id);
-      }
-
-      if (conditions.length === 1) {
-        return conditions[0];
-      }
-
-      return fns.and(...conditions);
-    });
-
-    const listingPlan = listingsQuery.limit(limit).offset(offset).build();
-
-    const countPlan = listingTable
-      .select('id')
-      .where((f, fns) => {
-        const conditions = [];
-
-        if (type) {
-          conditions.push(fns.eq(f.type, type));
-        }
-
-        if (minPrice !== undefined) {
-          conditions.push(fns.gte(f.price, minPrice.toString()));
-        }
-
-        if (maxPrice !== undefined) {
-          conditions.push(fns.lte(f.price, maxPrice.toString()));
-        }
-
-        if (bedrooms !== undefined) {
-          conditions.push(fns.eq(f.bedrooms, bedrooms));
-        }
-
-        if (searchPoint && radiusInMeters !== undefined) {
-          conditions.push(
-            fns.lte(
-              fns.distanceSphere(f.location, searchPoint),
-              radiusInMeters,
-            ),
-          );
-        }
-
-        if (conditions.length === 0) {
-          return fns.eq(f.id, f.id);
-        }
-
-        if (conditions.length === 1) {
-          return conditions[0];
-        }
-
-        return fns.and(...conditions);
-      })
-      .build();
-
-    const runtime = this.databaseService.client.runtime();
-
-    const [listingRows, countRows] = await Promise.all([
-      runtime.query(listingPlan),
-      runtime.query(countPlan),
+      listingsQuery.aggregate((aggregate) => ({
+        total: aggregate.count(),
+      })),
     ]);
 
-    const total = countRows.length;
+    const total = totals.total;
     const totalPages = Math.ceil(total / limit);
 
     return {
