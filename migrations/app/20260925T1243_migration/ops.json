@@ -1,0 +1,337 @@
+[
+  {
+    "id": "schema.public",
+    "label": "Create schema \"public\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres"
+    },
+    "precheck": [],
+    "execute": [
+      {
+        "description": "Create schema \"public\"",
+        "sql": "CREATE SCHEMA IF NOT EXISTS \"public\"",
+        "params": []
+      }
+    ],
+    "postcheck": []
+  },
+  {
+    "id": "table.agent",
+    "label": "Create table \"agent\"",
+    "summary": "Creates table \"agent\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "agent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"agent\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"agent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"agent\"",
+        "sql": "CREATE TABLE \"public\".\"agent\" (\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"email\" text NOT NULL,\n  \"id\" text NOT NULL,\n  \"name\" text NOT NULL,\n  \"phone\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\")\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"agent\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"agent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "table.listing",
+    "label": "Create table \"listing\"",
+    "summary": "Creates table \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "table",
+        "name": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure table \"listing\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create table \"listing\"",
+        "sql": "CREATE TABLE \"public\".\"listing\" (\n  \"agentId\" text NOT NULL,\n  \"bedrooms\" int4 NOT NULL,\n  \"createdAt\" timestamptz DEFAULT (now()) NOT NULL,\n  \"id\" text NOT NULL,\n  \"location\" geometry(Geometry,4326) NOT NULL,\n  \"price\" numeric NOT NULL,\n  \"title\" text NOT NULL,\n  \"type\" text NOT NULL,\n  \"updatedAt\" timestamptz NOT NULL,\n  PRIMARY KEY (\"id\"),\n  CONSTRAINT \"listing_type_check_b830bd8a\" CHECK (\"type\" IN ('RENT', 'SALE', 'SHORTLET'))\n)",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify table \"listing\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "unique.agent.agent_email_key",
+    "label": "Add unique constraint on \"agent\" (email)",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "unique",
+        "name": "agent_email_key",
+        "table": "agent"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure constraint \"agent_email_key\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "agent_email_key",
+          "public",
+          "\"public\".\"agent\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add unique constraint \"agent_email_key\"",
+        "sql": "ALTER TABLE \"public\".\"agent\" ADD CONSTRAINT \"agent_email_key\" UNIQUE (\"email\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify constraint \"agent_email_key\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "agent_email_key",
+          "public",
+          "\"public\".\"agent\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.listing.listing_agentId_idx_8d0ba4f0",
+    "label": "Create index \"listing_agentId_idx_8d0ba4f0\" on \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "listing_agentId_idx_8d0ba4f0",
+        "table": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"listing_agentId_idx_8d0ba4f0\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_agentId_idx_8d0ba4f0\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"listing_agentId_idx_8d0ba4f0\"",
+        "sql": "CREATE INDEX \"listing_agentId_idx_8d0ba4f0\" ON \"public\".\"listing\" (\"agentId\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"listing_agentId_idx_8d0ba4f0\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_agentId_idx_8d0ba4f0\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.listing.listing_bedrooms_idx_7c265d82",
+    "label": "Create index \"listing_bedrooms_idx_7c265d82\" on \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "listing_bedrooms_idx_7c265d82",
+        "table": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"listing_bedrooms_idx_7c265d82\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_bedrooms_idx_7c265d82\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"listing_bedrooms_idx_7c265d82\"",
+        "sql": "CREATE INDEX \"listing_bedrooms_idx_7c265d82\" ON \"public\".\"listing\" (\"bedrooms\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"listing_bedrooms_idx_7c265d82\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_bedrooms_idx_7c265d82\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.listing.listing_price_idx_696ad5eb",
+    "label": "Create index \"listing_price_idx_696ad5eb\" on \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "listing_price_idx_696ad5eb",
+        "table": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"listing_price_idx_696ad5eb\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_price_idx_696ad5eb\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"listing_price_idx_696ad5eb\"",
+        "sql": "CREATE INDEX \"listing_price_idx_696ad5eb\" ON \"public\".\"listing\" (\"price\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"listing_price_idx_696ad5eb\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_price_idx_696ad5eb\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "index.listing.listing_type_idx_b6b604ea",
+    "label": "Create index \"listing_type_idx_b6b604ea\" on \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "index",
+        "name": "listing_type_idx_b6b604ea",
+        "table": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure index \"listing_type_idx_b6b604ea\" does not exist",
+        "sql": "SELECT (to_regclass($1)) IS NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_type_idx_b6b604ea\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "create index \"listing_type_idx_b6b604ea\"",
+        "sql": "CREATE INDEX \"listing_type_idx_b6b604ea\" ON \"public\".\"listing\" (\"type\")",
+        "params": []
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify index \"listing_type_idx_b6b604ea\" exists",
+        "sql": "SELECT (to_regclass($1)) IS NOT NULL AS \"result\"",
+        "params": [
+          "\"public\".\"listing_type_idx_b6b604ea\""
+        ]
+      }
+    ]
+  },
+  {
+    "id": "foreignKey.listing.listing_agentId_fkey",
+    "label": "Add foreign key \"listing_agentId_fkey\" on \"listing\"",
+    "operationClass": "additive",
+    "target": {
+      "id": "postgres",
+      "details": {
+        "schema": "public",
+        "objectType": "foreignKey",
+        "name": "listing_agentId_fkey",
+        "table": "listing"
+      }
+    },
+    "precheck": [
+      {
+        "description": "ensure FK \"listing_agentId_fkey\" does not exist",
+        "sql": "SELECT NOT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "listing_agentId_fkey",
+          "public",
+          "\"public\".\"listing\""
+        ]
+      }
+    ],
+    "execute": [
+      {
+        "description": "add FK \"listing_agentId_fkey\"",
+        "sql": "ALTER TABLE \"public\".\"listing\"\nADD CONSTRAINT \"listing_agentId_fkey\"\nFOREIGN KEY (\"agentId\")\nREFERENCES \"public\".\"agent\" (\"id\")"
+      }
+    ],
+    "postcheck": [
+      {
+        "description": "verify FK \"listing_agentId_fkey\" exists",
+        "sql": "SELECT EXISTS (SELECT 1 AS \"one\" FROM \"pg_constraint\" AS \"c\" INNER JOIN \"pg_namespace\" AS \"n\" ON \"n\".\"oid\" = \"c\".\"connamespace\" WHERE (\"c\".\"conname\" = $1 AND \"n\".\"nspname\" = $2 AND \"c\".\"conrelid\" = to_regclass($3))) AS \"result\"",
+        "params": [
+          "listing_agentId_fkey",
+          "public",
+          "\"public\".\"listing\""
+        ]
+      }
+    ]
+  }
+]

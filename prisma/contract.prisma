@@ -1,0 +1,39 @@
+// use prisma-8
+
+types {
+  Point4326 = postgis.Geometry(4326)
+}
+
+enum ListingType {
+  RENT
+  SALE
+  SHORTLET
+}
+
+model Agent {
+  id        String    @id @default(uuid())
+  name      String
+  email     String    @unique
+  phone     String
+  listings  Listing[]
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+}
+
+model Listing {
+  id        String       @id @default(uuid())
+  title     String
+  price     Decimal
+  type      ListingType
+  bedrooms  Int
+  location  Point4326
+  agent     Agent        @relation(fields: [agentId], references: [id])
+  agentId   String
+  createdAt TimestamptzString @default(now())
+  updatedAt temporal.updatedAtString()
+
+  @@index([type])
+  @@index([price])
+  @@index([bedrooms])
+  @@index([agentId])
+}
