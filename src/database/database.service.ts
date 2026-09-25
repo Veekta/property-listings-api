@@ -7,4 +7,9 @@ export class DatabaseService {
   get client() {
     return db;
   }
+
+  async checkConnection(): Promise<boolean> {
+    await db.orm.public.Agent.all();
+    return true;
+  }
 }
