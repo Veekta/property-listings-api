@@ -7,6 +7,7 @@ import {
 import { DatabaseService } from '../database/database.service.js';
 import { CreateListingDto } from './dto/create-listing.dto.js';
 import { ListListingsDto } from './dto/list-listings.dto.js';
+import { UpdateListingDto } from './dto/update-listing.dto.js';
 import { mapListing } from './mappers/listing.mapper.js';
 
 @Injectable()
@@ -158,6 +159,72 @@ export class ListingsService {
       'createdAt',
       'updatedAt',
     ).first({ id });
+
+    if (!listing) {
+      throw new NotFoundException('Listing not found');
+    }
+
+    return mapListing(listing);
+  }
+
+  async update(id: string, updateListingDto: UpdateListingDto) {
+    const { title, price, type, bedrooms, latitude, longitude } =
+      updateListingDto;
+
+    const hasLatitude = latitude !== undefined;
+    const hasLongitude = longitude !== undefined;
+
+    if (hasLatitude !== hasLongitude) {
+      throw new BadRequestException(
+        'latitude and longitude must be provided together',
+      );
+    }
+
+    const updateData: {
+      title?: string;
+      price?: string;
+      type?: UpdateListingDto['type'];
+      bedrooms?: number;
+      location?: {
+        type: 'Point';
+        coordinates: [number, number];
+        srid: 4326;
+      };
+    } = {};
+
+    if (title !== undefined) {
+      updateData.title = title;
+    }
+
+    if (price !== undefined) {
+      updateData.price = price.toString();
+    }
+
+    if (type !== undefined) {
+      updateData.type = type;
+    }
+
+    if (bedrooms !== undefined) {
+      updateData.bedrooms = bedrooms;
+    }
+
+    if (latitude !== undefined && longitude !== undefined) {
+      updateData.location = {
+        type: 'Point',
+        coordinates: [longitude, latitude],
+        srid: 4326,
+      };
+    }
+
+    if (Object.keys(updateData).length === 0) {
+      throw new BadRequestException(
+        'At least one field must be provided for update',
+      );
+    }
+
+    const listing = await this.databaseService.client.orm.public.Listing.where({
+      id,
+    }).update(updateData);
 
     if (!listing) {
       throw new NotFoundException('Listing not found');

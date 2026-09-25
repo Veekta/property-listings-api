@@ -6,11 +6,13 @@ import {
   Query,
   Param,
   ParseUUIDPipe,
+  Patch,
 } from '@nestjs/common';
 
 import { CreateListingDto } from './dto/create-listing.dto.js';
 import { ListingsService } from './listings.service.js';
 import { ListListingsDto } from './dto/list-listings.dto.js';
+import { UpdateListingDto } from './dto/update-listing.dto.js';
 
 @Controller('listings')
 export class ListingsController {
@@ -29,5 +31,13 @@ export class ListingsController {
   @Get(':id')
   findOne(@Param('id', new ParseUUIDPipe()) id: string) {
     return this.listingsService.findOne(id);
+  }
+
+  @Patch(':id')
+  update(
+    @Param('id', new ParseUUIDPipe()) id: string,
+    @Body() updateListingDto: UpdateListingDto,
+  ) {
+    return this.listingsService.update(id, updateListingDto);
   }
 }
