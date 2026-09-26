@@ -24,14 +24,18 @@ export class ListingsService {
       srid: 4326,
     };
 
-    return this.databaseService.client.orm.public.Listing.create({
-      title,
-      price: price.toString(),
-      type,
-      bedrooms,
-      location,
-      agentId,
-    });
+    const listing = await this.databaseService.client.orm.public.Listing.create(
+      {
+        title,
+        price: price.toString(),
+        type,
+        bedrooms,
+        location,
+        agentId,
+      },
+    );
+
+    return mapListing(listing);
   }
 
   async findAll(query: ListListingsDto) {

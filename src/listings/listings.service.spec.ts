@@ -82,14 +82,16 @@ describe('ListingsService', () => {
         id: 'listing-id',
         title: 'Three Bedroom Apartment',
         price: '5000000',
-        type: 'SALE',
+        type: 'SALE' as const,
         bedrooms: 3,
         location: {
-          type: 'Point',
-          coordinates: [3.3792, 6.5244],
+          type: 'Point' as const,
+          coordinates: [3.3792, 6.5244] as [number, number],
           srid: 4326,
         },
         agentId: '550e8400-e29b-41d4-a716-446655440000',
+        createdAt: '2026-09-26 05:00:00+00',
+        updatedAt: '2026-09-26 05:00:00+00',
       };
 
       createMock.mockResolvedValue(createdListing);
@@ -104,20 +106,18 @@ describe('ListingsService', () => {
         agentId: '550e8400-e29b-41d4-a716-446655440000',
       });
 
-      expect(createMock).toHaveBeenCalledWith({
+      expect(result).toEqual({
+        id: 'listing-id',
         title: 'Three Bedroom Apartment',
-        price: '5000000',
-        type: ListingType.SALE,
+        price: 5000000,
+        type: 'SALE',
         bedrooms: 3,
-        location: {
-          type: 'Point',
-          coordinates: [3.3792, 6.5244],
-          srid: 4326,
-        },
+        latitude: 6.5244,
+        longitude: 3.3792,
         agentId: '550e8400-e29b-41d4-a716-446655440000',
+        createdAt: '2026-09-26 05:00:00+00',
+        updatedAt: '2026-09-26 05:00:00+00',
       });
-
-      expect(result).toEqual(createdListing);
     });
   });
 

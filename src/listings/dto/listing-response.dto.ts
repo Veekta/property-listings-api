@@ -1,46 +1,25 @@
-import {
-  IsEnum,
-  IsInt,
-  IsLatitude,
-  IsLongitude,
-  IsNotEmpty,
-  IsNumber,
-  IsString,
-  IsUUID,
-  MaxLength,
-  Min,
-  MinLength,
-  IsPositive,
-} from 'class-validator';
-
 import { ApiProperty } from '@nestjs/swagger';
 
-export enum ListingType {
-  RENT = 'RENT',
-  SALE = 'SALE',
-  SHORTLET = 'SHORTLET',
-}
+import { ListingType } from './create-listing.dto.js';
 
-export class CreateListingDto {
+export class ListingResponseDto {
   @ApiProperty({
-    example: 'Three Bedroom Apartment',
-    description: 'Title of the property listing.',
-    minLength: 3,
-    maxLength: 200,
+    example: '2ac79ae0-9b5f-48fb-932f-5d03ad18ac24',
+    format: 'uuid',
+    description: 'Unique identifier of the listing.',
   })
-  @IsString()
-  @IsNotEmpty()
-  @MinLength(3)
-  @MaxLength(200)
+  id!: string;
+
+  @ApiProperty({
+    example: 'Abuja Four Bedroom House',
+    description: 'Title of the property listing.',
+  })
   title!: string;
 
   @ApiProperty({
-    example: 5000000,
+    example: 8000000,
     description: 'Property price.',
-    minimum: 0,
   })
-  @IsNumber()
-  @IsPositive()
   price!: number;
 
   @ApiProperty({
@@ -48,37 +27,42 @@ export class CreateListingDto {
     example: ListingType.SALE,
     description: 'Type of property transaction.',
   })
-  @IsEnum(ListingType)
   type!: ListingType;
 
   @ApiProperty({
-    example: 3,
+    example: 4,
     description: 'Number of bedrooms.',
-    minimum: 0,
   })
-  @IsInt()
-  @Min(0)
   bedrooms!: number;
 
   @ApiProperty({
-    example: 6.5244,
+    example: 9.0765,
     description: 'Latitude of the property location.',
   })
-  @IsLatitude()
   latitude!: number;
 
   @ApiProperty({
-    example: 3.3792,
+    example: 7.3986,
     description: 'Longitude of the property location.',
   })
-  @IsLongitude()
   longitude!: number;
 
   @ApiProperty({
     example: '550e8400-e29b-41d4-a716-446655440000',
-    description: 'UUID of the agent associated with the listing.',
     format: 'uuid',
+    description: 'UUID of the agent associated with the listing.',
   })
-  @IsUUID()
   agentId!: string;
+
+  @ApiProperty({
+    example: '2026-09-25T17:38:31.914Z',
+    description: 'Timestamp when the listing was created.',
+  })
+  createdAt!: string;
+
+  @ApiProperty({
+    example: '2026-09-25T17:38:31.914Z',
+    description: 'Timestamp when the listing was last updated.',
+  })
+  updatedAt!: string;
 }
